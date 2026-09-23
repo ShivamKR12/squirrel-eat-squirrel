@@ -1,41 +1,89 @@
-name: Build Windows Executable
+name: Build Desktop Executables
 
 on:
-  [push, workflow_dispatch]
+  push:
+    paths:
+      - '**.py'
+      - '**.spec'
+      - '**.ini'
+      - 'requirements.txt'
+      - 'setup.py'
+      - '.github/workflows/*.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    runs-on: windows-latest
-    if: github.event_name != 'push' || (!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[ci skip]'))
+  build-desktop:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '3.13'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pygame-ce pyinstaller
+          pip install pyinstaller pygame-ce
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        shell: bash
 
-      - name: Build executable with PyInstaller
-        run: |
-          pyinstaller --clean --noconfirm squirrel-eats-squirrel.spec
+      - name: Build with PyInstaller
+        run: pyinstaller --clean --noconfirm squirrel-eats-squirrel.spec
+        shell: bash
 
-      - name: Zip executable
-        run: |
-          Compress-Archive -Path dist\squirrel-eats-squirrel.exe -DestinationPath dist\squirrel-eats-squirrel.zip -Force
+      - name: Archive Windows executable
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path dist/squirrel-eats-squirrel.exe -DestinationPath squirrel-eats-squirrel-windows.zip
 
-      - name: Create Release
+      - name: Archive Linux executable
+        if: runner.os == 'Linux'
+        run: tar -czvf squirrel-eats-squirrel-linux.tar.gz -C dist squirrel-eats-squirrel
+
+      - name: Archive macOS application
+        if: runner.os == 'macOS'
+        run: zip -j squirrel-eats-squirrel-macos.zip dist/squirrel-eats-squirrel
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: squirrel-eats-squirrel-${{ runner.os }}
+          path: |
+            squirrel-eats-squirrel-*.zip
+            squirrel-eats-squirrel-*.tar.gz
+
+  release:
+    name: Create GitHub Release
+    needs: build-desktop
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Create Release and upload files
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Squirrel Eat Squirrel v1.0.${{ github.run_number }}
-          files: dist/squirrel-eats-squirrel.zip
+          files: |
+            artifacts/squirrel-eats-squirrel-Windows/squirrel-eats-squirrel-windows.zip
+            artifacts/squirrel-eats-squirrel-Linux/squirrel-eats-squirrel-linux.tar.gz
+            artifacts/squirrel-eats-squirrel-macOS/squirrel-eats-squirrel-macos.zip

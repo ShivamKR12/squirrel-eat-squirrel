@@ -41,7 +41,7 @@ jobs:
         shell: bash
 
       - name: Build with PyInstaller
-        run: pyinstaller --clean --noconfirm squirrel-eats-squirrel.spec
+        run: pyinstaller --clean --noconfirm main.spec
         shell: bash
 
       - name: Archive Windows executable

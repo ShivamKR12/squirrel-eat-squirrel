@@ -2,7 +2,7 @@
 
 
 a = Analysis(
-    ['squirrel-eats-squirrel.py'],
+    ['main.py'],
     pathex=[],
     binaries=[],
     datas=[('gameicon.png', '.'), ('squirrel.png', '.'), ('grass1.png', '.'), ('grass2.png', '.'), ('grass3.png', '.'), ('grass4.png', '.')],

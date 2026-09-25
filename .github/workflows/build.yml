@@ -3,12 +3,9 @@ name: Build Desktop Executables
 on:
   push:
     paths:
-      - '**.py'
-      - '**.spec'
-      - '**.ini'
-      - 'requirements.txt'
-      - 'setup.py'
-      - '.github/workflows/*.yml'
+      - 'main.py'
+      - 'main.spec'
+      - '.github/workflows/build.yml'
   workflow_dispatch:
 
 permissions:

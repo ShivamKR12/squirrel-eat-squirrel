@@ -58,7 +58,9 @@ def resource_path(relative_path):
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT, L_SQUIR_IMG, R_SQUIR_IMG, GRASSIMAGES
 
+    pygame.mixer.pre_init(44100, -16, 2, 1024)
     pygame.init()
+    pygame.mixer.set_num_channels(64)
     FPSCLOCK = pygame.time.Clock()
     pygame.display.set_icon(pygame.image.load(resource_path('gameicon.png')))
     DISPLAYSURF = pygame.display.set_mode((WINWIDTH, WINHEIGHT))
@@ -252,7 +254,7 @@ def runGame():
             DISPLAYSURF.blit(winSurf2, winRect2)
 
         pygame.display.update()
-        FPSCLOCK.tick(FPS)
+        FPSCLOCK.tick()
 
 def drawHealthMeter(currentHealth):
     for i in range(currentHealth):
